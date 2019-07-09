@@ -1,0 +1,76 @@
+1.First node
+#make a backup on the root and boot partition before patch
+
+crm configure show|egrep '^(node)'|sed 's/node //g' > /tmp/nodes.txt
+
+while read node; do ssh root@$node '/root/scripts/mk_syscopy.sh'; done < /tmp/nodes.txt
+
+
+
+#cluster patch script, execute script only from one node.
+#make backup of cluster conf file
+
+crm configure save /tmp/$(hostname).$(date +"%Y:%m:%d").txt
+
+
+#see cluster configuretion
+crm configure show
+
+#stop res of fs
+for rg in $(haeshowresourcegroups); do haehaltres -f $(haeshowprimitivesfromgroup -c ocf -p heartbeat -t Filesystem $rg | head -n 1); done
+
+crm_mon -r1
+
+for rg in $(haeshowresourcegroups); do echo $rg; done > /tmp/rg.txt
+
+#examples
+#haehaltres haoraalmsq01
+#haehaltres haoraalmsq02
+#haehaltres haoraalmsq03
+#haehaltres haoraalmsq04
+#haehaltres $(haeshowresourcegroups) sleep 10
+
+
+while read rg; do haehaltres $rg && sleap5 ; done < /tmp/rg.txt
+NODE=$(crm configure show|egrep '^(node)'|sed 's/node //g')
+crm_mon -r1|egrep 'Stop'
+
+if [ "$?" -ne "0" ]
+ then
+    sleep 30
+    haemaintenancemode -e
+    
+ else
+     haemaintenancemode -e 
+fi
+
+#while read node; do ssh root@$node 'rcopenais stop; chkconfig -d openais'; done < crm configure show|egrep '^(node)'|sed 's/node //g'
+
+crm configure show|egrep '^(node)'|sed 's/node //g' > /tmp/nodes.txt
+while read node; do ssh root@$node 'rcopenais stop; chkconfig -d openais'; done < /tmp/nodes.txt
+while read node; do ssh root@$node 'hostname; zypper lu|wc -l'; done < /tmp/nodes.txt
+
+zypper lr && zyppper up && reboot
+
+
+
+2.Second node
+
+zypper lr && zyppper up && reboot
+
+
+3.After_both nodes are started.
+
+#crm configure show|egrep '^(node)'|sed 's/node //g' > /tmp/nodes.txt
+
+while read node; do ssh root@$node 'rcopenais start; chkconfig -a openais'; done < /tmp/nodes.txt
+ 
+haemaintenancemode -d
+
+for rg in $(haeshowresourcegroups); do echo $rg; done > /tmp/rg.txt
+
+
+
+while read rg; do haerunres -f $rg && sleap10 ; done < /tmp/rg.txt
+
+cs_clusterstate
