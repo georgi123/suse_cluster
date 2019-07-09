@@ -1,0 +1,29 @@
+#!/bin/bash
+
+USER="$1"
+
+if (! egrep "$USER" /etc/passwd > /dev/null); then
+
+  echo "jenkins is not installed" && exit 1
+
+ else
+  echo "Jenkins was installed"
+
+fi
+
+systemctl status jenkins > /dev/null
+
+STATUS="$?"
+
+
+if [ ${STATUS} -eq "0" ]
+
+
+ then
+
+  echo "jenkins is running" && exit 0
+ else
+  echo "jenkins will be started"
+  systemctl start jenkins
+  echo $?
+fi
