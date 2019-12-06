@@ -1,0 +1,89 @@
+#!/bin/bash
+#Created by GD
+###vars###
+
+###if [ -f /root/scripts/mk_syscopy.sh ]
+###  then
+###      /root/scripts/./mk_syscopy.sh
+### elif [ -f /usr/sbin/alternate_boot ]
+###   then
+###       /usr/sbin/alternate_boot -c
+###  else
+###    ehco "Not match backup scripts."
+###fi
+
+
+NODE=$(crm node list  | grep ^[a-z] | cut -d\: -f1)
+crm node list  | grep ^[a-z] | cut -d\: -f1 > /tmp/node.txt
+chattr +i /tmp/node.txt
+
+###adding check function######
+#######functions########
+
+check() {
+if  [ "$?" -eq "0" ]
+ then
+    echo "Command ended successful Yes"
+  else
+       echo     "Command failed. "
+fi
+}
+#make backup of cluster conf file
+
+echo "crm configure save /tmp/$(hostname).$(date +"%Y:%m:%d").txt" >> /var/log/cluster_patch
+yes | crm configure save /tmp/$(hostname).$(date +"%Y:%m:%d").txt
+
+check >> /var/log/cluster_patch
+
+
+crm resource list|grep Re|awk -F ": " '{print $2}' > /tmp/rg.txt
+
+echo "stop reinforces" >> /var/log/cluster_patch
+
+for rg in  $(</tmp/rg.txt);do crm -w resource stop  $rg; sleep 7; done
+
+check >> /var/log/cluster_patch
+
+echo "List cluster nodes" >> /var/log/cluster_patch
+echo "$NODE" >> /var/log/cluster_patch
+
+for rg. in $(</tmp/rg.txt); do crm -w resource status $rg; done
+
+read
+
+
+
+echo "haemaintenancemode -e" >> /var/log/cluster_patch
+
+crm configure property maintenance-mode=true
+
+check >> /var/log/cluster_patch
+
+echo $NODE
+echo "Stop and disable openais"
+rcopenais stop; chkconfig -d openais
+for node in $(</tmp/node.txt); do if [ $node != $(hostname) ]; then ssh root@$node 'rcopenais stop; chkconfig -d openais'; else echo "NOT running on LOCAL nodei" ; fi ; done
+
+check
+
+space=($(df -h|egrep '\/ |\/boot|\/var'|awk '{print $5}'|awk -F "%" '{print $1}'))
+
+for s in ${space[@]}
+  do
+if [ $s -lt  "80" ]
+  then
+   echo "FREE SPASE IS OK"
+ else
+   echo "CHECK FREE SPASE"
+fi
+done
+echo "##############################################################"
+echo "##############################################################"
+echo "##############################################################"
+echo "IF FREE SPASE IS WITH STATUS OK PLEASE PRESS ANY KEY"
+echo "##############################################################"
+echo "##############################################################"
+echo "##############################################################"
+
+read
+zypper -n up  && touch /forcefsck && touch /root/CHECK_PATCH_SUCCESS && crontab -l > /tmp/PatchTempCron ; echo "@reboot /root/scripts/cluster_project/cluster_patch_second.node" >> /tmp/PatchTempCron ; crontab /tmp/PatchTempCron && reboot >> /var/log/cluster_patch
