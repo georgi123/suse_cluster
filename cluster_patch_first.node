@@ -49,9 +49,15 @@ echo "$NODE" >> /var/log/cluster_patch
 
 for rg. in $(</tmp/rg.txt); do crm -w resource status $rg; done
 
+echo "#######################"
+echo "#######################"
+echo "#######################"
+echo "###CHECH IF RESORSES WERE STOPPED, IF NOT DO NOT PROCCED###"
+echo "#######################"
+echo "#######################"
+echo "#######################"
+
 read
-
-
 
 echo "haemaintenancemode -e" >> /var/log/cluster_patch
 
