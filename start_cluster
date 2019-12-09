@@ -1,0 +1,27 @@
+#!/bin/bash
+#Created by GD
+
+for node in $(</tmp/node.txt); do if [ $node != $(hostname) ]; then ssh root@$node 'rcopenais start; chkconfig -a openais'; else rcopenais start; chkconfig -a openais; fi ; done
+
+###Stop maitenace mode on the cluster###
+sleep 20
+#haemaintenancemode -d
+#Changing to cluster native commands
+crm configure property maintenance-mode=false
+
+sleep 10
+###Start cluster resorses###
+
+for rg in $(crm resource list|grep Re|awk -F ": " '{print $2}'); do echo $rg; done > /tmp/rg.txt
+
+
+
+for rg in $(</tmp/rg.txt); do crm -w resource start $rg && sleep 10 ; done
+
+###Check cluster status###
+
+cs_clusterstate
+chattr -i /tmp/node.txt
+
+echo Now removing the unnecessary crontabs
+sed -i '/^@reboot/d' /var/spool/cron/tabs/root
