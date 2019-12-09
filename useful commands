@@ -1,0 +1,18 @@
+dimitrge@suse-mgr01:~> grep hae  /srv/salt/files/cluster_project/cluster_patch_first.node
+
+
+for rg in $(haeshowresourcegroups); do echo $rg; done > /tmp/rg.txt
+for rg in $(</tmp/rg.txt); do haehaltres -f $rg ; sleep 5 ; done
+echo "haemaintenancemode -e" >> /var/log/cluster_patch
+
+
+Put cluster in to maintenance mode on SLES11.x, SLES12.x, SLES15:
+   crm configure property maintenance-mode=true
+Bring cluster out of maintenance mode on SLES11.x, SLES12.x, SLES15:
+
+   crm configure property maintenance-mode=false
+crm -w resource stop SIMULATOR
+crm status
+crm -w resource start SIMULATOR
+crm resource list|grep Re|awk -F ": " '{print $2}'
+crm -w resource status SIMULATOR
