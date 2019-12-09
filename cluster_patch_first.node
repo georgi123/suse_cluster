@@ -57,7 +57,13 @@ echo "#######################"
 echo "#######################"
 echo "#######################"
 
-read
+echo "waiting for your decition"
+while read answer; do
+  if [ -z "$answer" ]; then
+    break
+  fi
+done
+
 
 echo "haemaintenancemode -e" >> /var/log/cluster_patch
 
@@ -91,5 +97,11 @@ echo "##############################################################"
 echo "##############################################################"
 echo "##############################################################"
 
-read
+echo "waiting for your decition"
+while read answer; do
+  if [ -z "$answer" ]; then
+    break
+  fi
+done
+
 zypper -n up  && touch /forcefsck && touch /root/CHECK_PATCH_SUCCESS && crontab -l > /tmp/PatchTempCron ; echo "@reboot /root/scripts/cluster_project/cluster_patch_second.node" >> /tmp/PatchTempCron ; crontab /tmp/PatchTempCron && reboot >> /var/log/cluster_patch
