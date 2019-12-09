@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ -f /root/CHECK_PATCH_SUCCESS ]
+
+        then
+
+                for node in $(</tmp/node.txt); do if [ $node != $(hostname) ]; then ssh root@$node 'zypper lr  && zypper -n up && reboot'; fi ; done
+
+        else
+
+                echo CHECK WHAT IS GOING ON
+
+fi
+
